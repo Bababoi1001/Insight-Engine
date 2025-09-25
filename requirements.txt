@@ -1,0 +1,12 @@
+ollama 
+sqlparse 
+pandas
+streamlit
+sqlalchemy
+psycopg2-binary
+tabulate
+fastapi
+uvicorn[standard]
+pydantic-settings # For managing secrets from the .env file
+python-dotenv
+cachetools

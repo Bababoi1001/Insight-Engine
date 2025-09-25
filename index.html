@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Analyst AI</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #f0f0f0;
+            --primary-color: #007acc;
+            --secondary-color: #2a2d34;
+            --border-color: #444;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+        }
+        .input-area, .results-area, .schema-area {
+            background-color: var(--secondary-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #005a9e;
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        .button-group {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+        }
+        .feedback-button {
+            background-color: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+        .feedback-button:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .hidden { display: none; }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-color);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error-message {
+            color: var(--error-color);
+            background-color: rgba(220, 53, 69, 0.1);
+            padding: 1rem;
+            border-radius: 4px;
+            border: 1px solid var(--error-color);
+        }
+        .result-block {
+            margin-bottom: 1.5rem;
+        }
+        h3 {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-top: 0;
+            color: var(--text-color);
+        }
+        pre {
+            background-color: var(--bg-color);
+            padding: 1rem;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: "Courier New", Courier, monospace;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            text-align: left;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📊 Data Analyst AI</h1>
+
+    <div class="schema-area">
+        <button id="schema-toggle-btn">View Database Schema</button>
+        <div id="schema-display" class="hidden">
+            <div id="schema-spinner" class="spinner hidden"></div>
+            <pre id="schema-content"></pre>
+        </div>
+    </div>
+
+    <div class="input-area">
+        <h3>Ask a question about your data:</h3>
+        <textarea id="question-input" rows="3" placeholder="e.g., What were the total sales last month?"></textarea>
+        <div class="button-group">
+            <button id="generate-btn">Generate Answer</button>
+        </div>
+    </div>
+
+    <div id="results-area" class="results-area hidden">
+        <div id="results-spinner" class="spinner"></div>
+        <div id="results-content" class="hidden">
+            
+            <div id="error-display" class="error-message hidden"></div>
+            
+            <div id="analysis-block" class="result-block hidden">
+                <h3>💡 Analysis</h3>
+                <div id="analysis-content"></div>
+            </div>
+
+            <div id="sql-block" class="result-block hidden">
+                <h3>🤖 Generated SQL Query</h3>
+                <pre id="sql-content"></pre>
+            </div>
+            
+            <div id="data-block" class="result-block hidden">
+                <h3>📊 Raw Data</h3>
+                <div id="data-content"></div>
+            </div>
+            
+            <div id="feedback-block" class="result-block hidden">
+                <h3>Was this answer helpful?</h3>
+                <input type="text" id="feedback-input" placeholder="Optional: If the result was wrong, how can it be improved?">
+                <div class="button-group">
+                    <button id="yes-btn" class="feedback-button">👍 Yes</button>
+                    <button id="no-btn" class="feedback-button">👎 No (Retry with Feedback)</button>
+                </div>
+                <div id="feedback-success" class="hidden" style="color: var(--success-color); margin-top: 1rem;">✅ Feedback received. Thanks for helping me improve!</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- CONFIGURATION ---
+    const API_BASE_URL = 'http://127.0.0.1:8000';
+
+    // --- DOM ELEMENT REFERENCES ---
+    const schemaToggleBtn = document.getElementById('schema-toggle-btn');
+    const schemaDisplay = document.getElementById('schema-display');
+    const schemaSpinner = document.getElementById('schema-spinner');
+    const schemaContent = document.getElementById('schema-content');
+    
+    const questionInput = document.getElementById('question-input');
+    const generateBtn = document.getElementById('generate-btn');
+    
+    const resultsArea = document.getElementById('results-area');
+    const resultsSpinner = document.getElementById('results-spinner');
+    const resultsContent = document.getElementById('results-content');
+    
+    const errorDisplay = document.getElementById('error-display');
+    const analysisBlock = document.getElementById('analysis-block');
+    const analysisContent = document.getElementById('analysis-content');
+    const sqlBlock = document.getElementById('sql-block');
+    const sqlContent = document.getElementById('sql-content');
+    const dataBlock = document.getElementById('data-block');
+    const dataContent = document.getElementById('data-content');
+    
+    const feedbackBlock = document.getElementById('feedback-block');
+    const feedbackInput = document.getElementById('feedback-input');
+    const yesBtn = document.getElementById('yes-btn');
+    const noBtn = document.getElementById('no-btn');
+    const feedbackSuccess = document.getElementById('feedback-success');
+
+    // --- STATE MANAGEMENT (Replaces st.session_state) ---
+    let lastQueryState = {
+        question: null,
+        sql: null
+    };
+
+    // --- API CALLS ---
+    async function fetchSchema() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/schema`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch schema from the server.');
+            }
+            const data = await response.json();
+            return data.schema;
+        } catch (error) {
+            console.error(error);
+            return 'Error: Could not load schema.';
+        }
+    }
+
+    async function postQuery(question, previousSql = null, feedback = null) {
+        const body = {
+            question: question,
+            previous_sql: previousSql,
+            feedback: feedback
+        };
+        const response = await fetch(`${API_BASE_URL}/query`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.detail || 'An unknown API error occurred.');
+        }
+        return data;
+    }
+
+    async function postFeedback(question, sql, isGood) {
+        const body = {
+            question: question,
+            sql_query: sql,
+            is_good: isGood
+        };
+        await fetch(`${API_BASE_URL}/feedback`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+    }
+
+    // --- UI LOGIC ---
+    function renderTable(dataArray) {
+        if (!dataArray || dataArray.length === 0) {
+            return '<p>The query returned no data.</p>';
+        }
+        const headers = Object.keys(dataArray[0]);
+        let tableHtml = '<table><thead><tr>';
+        headers.forEach(header => tableHtml += `<th>${header}</th>`);
+        tableHtml += '</tr></thead><tbody>';
+        dataArray.forEach(row => {
+            tableHtml += '<tr>';
+            headers.forEach(header => tableHtml += `<td>${row[header]}</td>`);
+            tableHtml += '</tr>';
+        });
+        tableHtml += '</tbody></table>';
+        return tableHtml;
+    }
+
+    function displayResults(data) {
+        // Show analysis
+        analysisContent.innerText = data.analysis;
+        analysisBlock.classList.remove('hidden');
+
+        // Show SQL
+        sqlContent.innerText = data.sql_query;
+        sqlBlock.classList.remove('hidden');
+
+        // Show data table
+        dataContent.innerHTML = renderTable(data.data);
+        dataBlock.classList.remove('hidden');
+
+        // Show feedback section
+        feedbackBlock.classList.remove('hidden');
+        feedbackInput.value = '';
+        feedbackSuccess.classList.add('hidden');
+    }
+
+    function resetUI() {
+        resultsArea.classList.add('hidden');
+        resultsContent.classList.add('hidden');
+        resultsSpinner.classList.remove('hidden');
+        errorDisplay.classList.add('hidden');
+        analysisBlock.classList.add('hidden');
+        sqlBlock.classList.add('hidden');
+        dataBlock.classList.add('hidden');
+        feedbackBlock.classList.add('hidden');
+    }
+
+    // --- EVENT LISTENERS ---
+    schemaToggleBtn.addEventListener('click', async () => {
+        const isHidden = schemaDisplay.classList.toggle('hidden');
+        if (!isHidden) { // If we just revealed it
+            schemaSpinner.classList.remove('hidden');
+            schemaContent.innerText = '';
+            const schema = await fetchSchema();
+            schemaContent.innerText = schema;
+            schemaSpinner.classList.add('hidden');
+        }
+    });
+
+    generateBtn.addEventListener('click', () => handleQuery());
+
+    noBtn.addEventListener('click', () => handleQuery(true)); // isRetry = true
+
+    yesBtn.addEventListener('click', async () => {
+        try {
+            await postFeedback(lastQueryState.question, lastQueryState.sql, true);
+            feedbackSuccess.classList.remove('hidden');
+            yesBtn.disabled = true;
+            noBtn.disabled = true;
+        } catch (error) {
+            alert('Failed to save feedback.');
+        }
+    });
+    
+    // --- MAIN HANDLER FUNCTION ---
+    async function handleQuery(isRetry = false) {
+        const question = questionInput.value.trim();
+        if (!question) {
+            alert('Please ask a question.');
+            return;
+        }
+
+        // 1. Reset UI and show loading spinner
+        resetUI();
+        resultsArea.classList.remove('hidden');
+        generateBtn.disabled = true;
+        generateBtn.innerText = 'Generating...';
+
+        try {
+            let data;
+            if (isRetry) {
+                // 2a. Call API with feedback
+                const feedback = feedbackInput.value.trim();
+                if (!feedback) {
+                    alert('Please provide feedback for the retry.');
+                    throw new Error("No feedback provided.");
+                }
+                data = await postQuery(lastQueryState.question, lastQueryState.sql, feedback);
+            } else {
+                // 2b. Call API with a new question
+                data = await postQuery(question);
+            }
+
+            // 3. Display results
+            displayResults(data);
+            
+            // 4. Update state
+            lastQueryState.question = question;
+            lastQueryState.sql = data.sql_query;
+            yesBtn.disabled = false;
+            noBtn.disabled = false;
+
+        } catch (error) {
+            errorDisplay.innerText = `Error: ${error.message}`;
+            errorDisplay.classList.remove('hidden');
+        } finally {
+            // 5. Hide spinner and re-enable button
+            resultsSpinner.classList.add('hidden');
+            resultsContent.classList.remove('hidden');
+            generateBtn.disabled = false;
+            generateBtn.innerText = 'Generate Answer';
+        }
+    }
+</script>
+
+</body>
+</html>

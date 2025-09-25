@@ -1,0 +1,84 @@
+###
+User Question: What is the total Sales for the month of Feb 2025?
+---
+SELECT
+  ROUND(SUM(sales_revenue), 2) AS total_sales_feb_2025
+ FROM ssa_order_data
+ WHERE DATE(order_date) >= '2025-02-01'
+  AND DATE(order_date) <= '2025-02-28';
+###
+User Question: Give me the count of orders during the month of APril 2025?
+---
+SELECT
+  COUNT(DISTINCT order_id) AS total_orders_april_2025
+ FROM ssa_order_data
+ WHERE order_date >= '2025-04-01'
+  AND order_date <= '2025-04-30';
+###
+User Question: What is the category-wise % split share of total revenue for Q1 2025?
+---
+SELECT
+  c.category,
+  SUM(o.sales_revenue) AS category_revenue,
+  ROUND(
+  (SUM(o.sales_revenue) * 100.0) /
+  SUM(SUM(o.sales_revenue)) OVER(), 2
+  ) AS revenue_percentage_share
+ FROM ssa_order_data o
+ JOIN ssa_category_data c
+  ON o.sku = c.variant_sku
+ WHERE o.order_date >= '2025-01-01'
+  AND o.order_date <= '2025-03-31'
+ GROUP BY c.category
+ ORDER BY category_revenue DESC;
+###
+User Question: Which flavour of Protein sells highest in revenue as on July/2025?
+---
+SELECT
+  c.flavour,
+  SUM(o.sales_revenue) AS total_revenue
+ FROM ssa_order_data o
+ JOIN ssa_category_data c
+  ON o.sku = c.variant_sku
+ WHERE o.order_date >= '2025-07-01'
+  AND o.order_date <= '2025-07-31'
+  AND UPPER(c.super_category) = 'PROTEIN'
+ GROUP BY c.flavour
+ ORDER BY total_revenue DESC
+ LIMIT 1;
+###
+User Question: What is the month-wise % discount between MRP Revenue and Total sales till 2025 two quarters?
+---
+SELECT
+  EXTRACT(MONTH FROM o.order_date) AS month,
+  FORMAT_DATE('%B', o.order_date) AS month_name,
+  SUM(c.mrp * o.order_quantity) AS mrp_revenue,
+  SUM(o.sales_revenue) AS actual_sales,
+  ROUND(
+  (SUM(c.mrp * o.order_quantity) - SUM(o.sales_revenue)) * 100.0 /
+  SUM(c.mrp * o.order_quantity), 2
+  ) AS discount_percentage
+ FROM ssa_order_data o
+ JOIN ssa_category_data c
+  ON o.sku = c.variant_sku
+ WHERE o.order_date >= '2025-01-01'
+  AND o.order_date <= '2025-06-30'
+ GROUP BY
+  EXTRACT(MONTH FROM o.order_date),
+  FORMAT_DATE('%B', o.order_date)
+ ORDER BY month;
+---
+Question: give me the monthly revenue generated for each year
+SQL: SELECT 
+    EXTRACT(YEAR FROM o.order_date) AS year,
+    EXTRACT(MONTH FROM o.order_date) AS month,
+    ROUND(CAST(SUM(o.sales_revenue) AS NUMERIC), 2) AS monthly_revenue
+FROM 
+    ssa_order_data o
+WHERE 
+    order_date >= '2020-01-01'
+GROUP BY 
+    EXTRACT(YEAR FROM o.order_date),
+    EXTRACT(MONTH FROM o.order_date)
+ORDER BY 
+    year, month;
