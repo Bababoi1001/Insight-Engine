@@ -13,7 +13,8 @@ import logic
 app = FastAPI(
     title="Chat with Your Database API",
     description="An API that converts natural language questions into SQL queries and insights.",
-    version="1.0.0"
+    version="1.0.0",
+    docs_url="/docs"
 )
 
 
